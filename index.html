@@ -3,25 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviatrix Mobile</title>
+    <title>Aviatrix Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         body { margin: 0; background: #0c0d12; color: white; font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
-        .game-header { padding: 15px; display: flex; justify-content: space-between; background: #151724; }
-        .game-area { flex: 1; background: linear-gradient(to bottom, #1a1c2c, #4a1942); position: relative; display: flex; align-items: center; justify-content: center; }
-        .multiplier { font-size: 4rem; font-weight: 900; z-index: 10; text-shadow: 0 0 20px #a020f0; }
-        .plane-box { position: absolute; bottom: 20%; left: 10%; transition: all 0.1s linear; }
-        .plane-svg { width: 80px; filter: drop-shadow(0 0 10px #a020f0); }
-        .controls { background: #151724; padding: 30px 20px; border-radius: 25px 25px 0 0; }
-        .bet-btn { width: 100%; background: #02c076; color: white; border: none; padding: 20px; border-radius: 15px; font-size: 1.5rem; font-weight: bold; }
+        .game-area { flex: 1; background: linear-gradient(to bottom, #1a1c2c, #4a1942); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .multiplier { font-size: 5rem; font-weight: 900; z-index: 10; text-shadow: 0 0 20px #a020f0; }
+        .plane-box { position: absolute; bottom: 20%; left: 10%; transition: transform 0.1s linear; }
+        .plane-svg { width: 100px; filter: drop-shadow(0 0 15px #a020f0); }
+        .controls { background: #151724; padding: 30px 20px; border-radius: 30px 30px 0 0; }
+        .bet-btn { width: 100%; background: #02c076; color: white; border: none; padding: 20px; border-radius: 15px; font-size: 1.8rem; font-weight: bold; box-shadow: 0 5px 0 #017a4b; }
+        .bet-btn:active { transform: translateY(4px); box-shadow: none; }
+        .wallet-text { text-align: center; font-size: 0.7rem; color: #848e9c; margin-top: 15px; word-break: break-all; }
     </style>
 </head>
 <body>
-    <div class="game-header">
-        <div id="ton-connect-button"></div>
-        <div style="color: #00d2ff;">Aviatrix Pro</div>
-    </div>
     <div class="game-area">
         <div class="multiplier" id="m-val">1.00x</div>
         <div class="plane-box" id="plane">
@@ -29,39 +25,52 @@
         </div>
     </div>
     <div class="controls">
-        <button class="bet-btn" onclick="startFlight()">BET</button>
+        <button class="bet-btn" onclick="startGame()">BET</button>
+        <div class="wallet-text">Deposit TON: UQAinxO5Eym0OB4mHquKX1UIpLeK9gdb6OuKrdZE6v63NgPH</div>
     </div>
 
     <script>
-        // Start TonConnect
-        const tonConnectUI = new TONConnectUI.TonConnectUI({
-            manifestUrl: 'https://mustafaduski.github.io/aviatrix-ton/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-button'
-        });
-
         let m = 1.00;
         let isFlying = false;
+        const mVal = document.getElementById('m-val');
+        const plane = document.getElementById('plane');
 
-        function startFlight() {
-            if(!tonConnectUI.wallet) {
-                window.Telegram.WebApp.showAlert("تکایە بەری هەمی تشتان وەلێتێ خۆ Connect بکە!");
-                return;
+        function startGame() {
+            if(!isFlying) {
+                isFlying = true;
+                document.querySelector('.bet-btn').innerText = "CASH OUT";
+                document.querySelector('.bet-btn').style.background = "#d93025"; // Red
+            } else {
+                window.Telegram.WebApp.showAlert("پیرۆزە! تە قازانج کر: " + m.toFixed(2) + "x");
+                resetGame();
             }
-            isFlying = true; // فڕۆکە دەست ب فڕینێ دکەت
-            window.Telegram.WebApp.showAlert("Bet Started!");
         }
 
-        function gameLoop() {
+        function resetGame() {
+            isFlying = false;
+            m = 1.00;
+            mVal.innerText = "1.00x";
+            plane.style.left = "10%";
+            plane.style.bottom = "20%";
+            document.querySelector('.bet-btn').innerText = "BET";
+            document.querySelector('.bet-btn').style.background = "#02c076";
+        }
+
+        function loop() {
             if(isFlying) {
                 m += 0.01;
-                document.getElementById('m-val').innerText = m.toFixed(2) + "x";
-                let p = document.getElementById('plane');
-                p.style.left = (10 + Math.min((m-1)*40, 70)) + "%";
-                p.style.bottom = (20 + Math.min((m-1)*20, 50)) + "%";
+                mVal.innerText = m.toFixed(2) + "x";
+                // جوولەیا فڕۆکێ
+                let x = Math.min((m-1)*40, 70);
+                let y = Math.min((m-1)*20, 50);
+                plane.style.left = (10 + x) + "%";
+                plane.style.bottom = (20 + y) + "%";
+                // لەرین
+                plane.style.transform = `translateY(${Math.sin(Date.now()/150)*5}px)`;
             }
-            requestAnimationFrame(gameLoop);
+            requestAnimationFrame(loop);
         }
-        gameLoop();
+        loop();
 
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
