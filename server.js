@@ -1,33 +1,54 @@
-const io = require('socket.io')(process.env.PORT || 3000, {
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
     cors: { origin: "*" }
 });
 
-let gameData = {
-    multiplier: 1.00,
-    status: "WAITING", // WAITING, FLYING, CRASHED
-    history: []
-};
+// خزمەتکردنی فایلە گرافیکییەکان
+app.use(express.static(path.join(__dirname, '.')));
 
-function startGame() {
-    gameData.multiplier = 1.00;
-    gameData.status = "FLYING";
+let multiplier = 1.00;
+let gameState = "WAITING"; // WAITING, FLYING, CRASHED
+let history = [];
+
+function startRound() {
+    multiplier = 1.00;
+    gameState = "FLYING";
     
-    // دیاریکردنی کاتی تەقینەوە (وەک کۆمپانیاکان بە ئەلگۆریتم)
-    const crashAt = (Math.random() * 5 + 1).toFixed(2); 
+    // ئەلگۆریتمی دیاریکردنی کاتی تەقینەوە (ڕاستەقینە)
+    const crashPoint = (Math.random() * 3 + 1.1).toFixed(2);
+    console.log(`Round started. Will crash at: ${crashPoint}`);
 
-    const interval = setInterval(() => {
-        if (gameData.multiplier >= crashAt) {
-            clearInterval(interval);
-            gameData.status = "CRASHED";
-            gameData.history.push(gameData.multiplier.toFixed(2));
-            io.emit('crash', gameData.multiplier.toFixed(2));
+    const timer = setInterval(() => {
+        if (multiplier >= parseFloat(crashPoint)) {
+            clearInterval(timer);
+            gameState = "CRASHED";
+            history.push(multiplier.toFixed(2));
+            if (history.length > 10) history.shift();
             
-            setTimeout(startGame, 5000); // ٥ چرکە چاوەڕێ دەکات بۆ خولی نوێ
+            io.emit('crash', { multiplier: multiplier.toFixed(2), history });
+            
+            // ٥ چرکە وەستان بۆ خولی داهاتوو
+            setTimeout(startRound, 5000);
         } else {
-            gameData.multiplier += 0.01;
-            io.emit('tick', gameData.multiplier.toFixed(2));
+            multiplier += 0.01;
+            io.emit('tick', { multiplier: multiplier.toFixed(2) });
         }
     }, 100);
 }
 
-startGame();
+// کاتێک یاریزانێک پەیوەندی دەکات
+io.on('connection', (socket) => {
+    socket.emit('init', { multiplier: multiplier.toFixed(2), history, gameState });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    startRound();
+});
