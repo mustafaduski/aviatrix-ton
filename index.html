@@ -3,110 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviatrix Pro - TON</title>
+    <title>Aviatrix Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0b0e11;
-            color: white;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-        .game-container {
-            width: 90%;
-            max-width: 400px;
-            background: #161a1e;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 0 20px rgba(0,210,255,0.2);
-        }
-        .balance {
-            color: #00d2ff;
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-        }
-        .multiplier {
-            font-size: 4rem;
-            font-weight: bold;
-            margin: 30px 0;
-            color: #ffffff;
-        }
-        .plane-box {
-            height: 100px;
-            position: relative;
-        }
-        #plane {
-            width: 80px;
-            transition: transform 0.1s linear;
-        }
-        .bet-btn {
-            background-color: #02c076;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.5rem;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-        }
-        .bet-btn:active { transform: scale(0.98); }
-        .footer-info {
-            margin-top: 20px;
-            font-size: 0.8rem;
-            color: #848e9c;
-        }
+        body { margin: 0; background: #0c0d12; color: white; font-family: sans-serif; overflow: hidden; }
+        .game-area { height: 60vh; background: linear-gradient(to bottom, #1a1c2c, #4a1942); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .multiplier { font-size: 5rem; font-weight: 800; z-index: 10; text-shadow: 0 0 20px rgba(160, 32, 240, 0.8); }
+        .plane-container { position: absolute; bottom: 20%; left: 10%; transition: all 0.1s linear; }
+        #plane-img { width: 120px; filter: drop-shadow(0 0 10px #a020f0); }
+        .controls { height: 40vh; background: #151724; padding: 20px; border-top: 2px solid #32354a; }
+        .bet-input { width: 100%; background: #0c0d12; border: 1px solid #32354a; color: #00d2ff; padding: 15px; border-radius: 8px; font-size: 1.2rem; text-align: center; margin-bottom: 15px; }
+        .bet-button { width: 100%; background: #a020f0; color: white; border: none; padding: 18px; border-radius: 8px; font-size: 1.5rem; font-weight: bold; box-shadow: 0 5px 0 #6a14a1; }
+        .bet-button:active { transform: translateY(3px); box-shadow: 0 2px 0 #6a14a1; }
+        .wallet-info { font-size: 0.7rem; color: #6e7191; margin-top: 15px; text-align: center; }
+        /* ئەنیمەیشنا پاشبنەما ئەور یان تیشک */
+        .stars { position: absolute; width: 100%; height: 100%; background: url('https://www.transparenttextures.com/patterns/stardust.png'); opacity: 0.3; }
     </style>
 </head>
 <body>
-
-    <div class="game-container">
-        <div class="balance">Balance: <span id="balance">100.00</span> TON</div>
-        
-        <div class="multiplier" id="multiplier">1.00x</div>
-
-        <div class="plane-box">
-            <img id="plane" src="https://raw.githubusercontent.com/TelegramGameBot/assets/main/plane.png" alt="plane">
+    <div class="game-area">
+        <div class="stars"></div>
+        <div class="multiplier" id="m-val">1.00x</div>
+        <div class="plane-container" id="plane-box">
+            <img id="plane-img" src="https://raw.githubusercontent.com/mustafaduski/aviatrix-ton/main/plane.png" onerror="this.src='https://svgshare.com/i/157u.svg'">
         </div>
-
-        <button class="bet-btn" onclick="makeDeposit()">BET</button>
-
-        <div class="footer-info">
-            Official Deposit Address (TON):<br>
-            <b style="color:#00d2ff; word-break: break-all;">UQAinxO5Eym0OB4mHquKX1UIpLeK9gdb6OuKrdZE6v63NgPH</b>
+    </div>
+    <div class="controls">
+        <input type="number" class="bet-input" value="1.0" step="0.1">
+        <button class="bet-button" onclick="betNow()">BET</button>
+        <div class="wallet-info">
+            Deposit to: <br>
+            <span style="color: #a020f0;">UQAinxO5Eym0OB4mHquKX1UIpLeK9gdb6OuKrdZE6v63NgPH</span>
         </div>
     </div>
 
     <script>
-        let multiplier = 1.00;
-        let isRunning = true;
+        let m = 1.00;
+        let plane = document.getElementById('plane-box');
+        let mVal = document.getElementById('m-val');
 
-        // ئەنیمەیشنا زیادبوونا ڕێژەیێ
-        setInterval(() => {
-            if(isRunning) {
-                multiplier += 0.01;
-                document.getElementById('multiplier').innerText = multiplier.toFixed(2) + "x";
-                
-                // لەرینا فڕۆکێ
-                let offset = Math.sin(Date.now() / 200) * 5;
-                document.getElementById('plane').style.transform = translateY(${offset}px);
+        function gameLoop() {
+            m += 0.01;
+            mVal.innerText = m.toFixed(2) + "x";
+            
+            // جوولەیا فڕۆکێ بەرەو سەرێ (Aviatrix Style)
+            let x = (m - 1) * 30;
+            let y = (m - 1) * 15;
+            if(x < 60) {
+                plane.style.left = (10 + x) + "%";
+                plane.style.bottom = (20 + y) + "%";
             }
-        }, 100);
-
-        function makeDeposit() {
-            const wallet = "UQAinxO5Eym0OB4mHquKX1UIpLeK9gdb6OuKrdZE6v63NgPH";
-            alert("Please send your BET to:\n" + wallet);
+            requestAnimationFrame(gameLoop);
         }
+        gameLoop();
 
-        // ئاگاداری بۆ تێلێگرامێ
+        function betNow() {
+            window.Telegram.WebApp.showAlert("Please send TON to the wallet address below to confirm your bet.");
+        }
         window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
     </script>
 </body>
 </html>
