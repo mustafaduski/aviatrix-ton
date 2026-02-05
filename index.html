@@ -1,65 +1,112 @@
 <!DOCTYPE html>
-<html lang="ku" dir="rtl">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviatrix Pro</title>
+    <title>Aviatrix Pro - Game Engine</title>
+    <script src="https://pixijs.download/v7.x/pixi.min.js"></script>
     <style>
-        body { margin: 0; background: #0c0d12; color: white; font-family: sans-serif; overflow: hidden; height: 100vh; }
-        #game-area { position: relative; height: 60vh; background: radial-gradient(circle at bottom left, #1e213a, #0c0d12); }
-        canvas { width: 100%; height: 100%; display: block; }
-        .mult { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; font-weight: 900; font-style: italic; }
-        .controls { height: 40vh; background: #0f111a; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .bet-card { background: #1c1f2e; border-radius: 18px; padding: 15px; border: 1px solid #2d3045; text-align: center; }
-        .btn { width: 100%; background: #2855f5; border: none; color: white; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 1.2rem; cursor: pointer; margin-top: 10px; }
-        .btn.active { background: #ffb500; color: black; }
+        body { margin: 0; padding: 0; background: #0c0d12; overflow: hidden; font-family: 'Arial', sans-serif; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .multiplier { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 80px; font-weight: 900; font-style: italic; }
+        .bet-panel { position: absolute; bottom: 0; width: 100%; height: 30vh; background: #0f111a; display: flex; justify-content: space-around; align-items: center; pointer-events: auto; border-top: 2px solid #232635; }
+        .btn-bet { background: #2855f5; color: white; border: none; padding: 20px 60px; border-radius: 15px; font-size: 24px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-bet.active { background: #ffb500; color: black; }
     </style>
 </head>
 <body>
-    <div id="game-area">
-        <canvas id="canvas"></canvas>
-        <div class="mult" id="m-val">1.00x</div>
+
+<div id="game-canvas"></div>
+<div id="ui-layer">
+    <div class="multiplier" id="m-display">1.00x</div>
+    <div class="bet-panel">
+        <button class="btn-bet" id="bet-btn" onclick="toggleBet()">PLACE BET</button>
     </div>
-    <div class="controls">
-        <div class="bet-card"><div>100 TON</div><button class="btn" onclick="bet(this)">PLACE BET</button></div>
-        <div class="bet-card"><div>100 TON</div><button class="btn" onclick="bet(this)">PLACE BET</button></div>
-    </div>
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        let m = 1.00, flying = false;
+</div>
 
-        function resize() { canvas.width = window.innerWidth; canvas.height = canvas.offsetHeight; }
-        window.onresize = resize; resize();
+<script>
+    // 1. ڕێکخستنی بزوێنەری PixiJS (وەک کۆمپانیا پڕۆفیشناڵەکان)
+    const app = new PIXI.Application({
+        width: window.innerWidth,
+        height: window.innerHeight * 0.7,
+        backgroundColor: 0x0c0d12,
+        antialias: true,
+        resolution: window.devicePixelRatio || 1,
+    });
+    document.getElementById('game-canvas').appendChild(app.view);
 
-        function bet(b) {
-            if(b.innerText === "PLACE BET") {
-                b.innerText = "CASH OUT"; b.classList.add('active');
-                if(!flying) { flying = true; m = 1.00; update(); }
-            } else { b.innerText = "PLACE BET"; b.classList.remove('active'); }
+    // 2. دروستکردنی هێڵی فڕین (Graphics)
+    const line = new PIXI.Graphics();
+    app.stage.addChild(line);
+
+    // 3. دروستکردنی فڕۆکەکە بە کۆد (بۆ ئەوەی وێنە نەبێت و تێک نەچێت)
+    const plane = new PIXI.Graphics();
+    plane.beginFill(0xff3333);
+    plane.drawRoundedRect(0, 0, 60, 25, 10);
+    plane.endFill();
+    app.stage.addChild(plane);
+
+    let multiplier = 1.00;
+    let isFlying = false;
+    let speed = 0.005;
+
+    function toggleBet() {
+        const btn = document.getElementById('bet-btn');
+        if (!isFlying) {
+            isFlying = true;
+            multiplier = 1.00;
+            btn.innerText = "CASH OUT";
+            btn.classList.add('active');
+            fly();
+        } else {
+            alert("تە " + (100 * multiplier).toFixed(2) + " TON قازانج کرد!");
+            resetGame();
         }
+    }
 
-        function update() {
-            if(!flying) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            m += 0.01;
-            document.getElementById('m-val').innerText = m.toFixed(2) + "x";
-            
-            let x = (m-1)*150, y = Math.pow(m-1, 1.2)*100;
-            let px = 50 + x, py = canvas.height - 50 - y;
+    function fly() {
+        if (!isFlying) return;
 
-            // کێشانی هێڵی زەرد
-            ctx.beginPath(); ctx.strokeStyle = '#ffb500'; ctx.lineWidth = 5;
-            ctx.moveTo(50, canvas.height-50); ctx.quadraticCurveTo(px/2+25, canvas.height-50, px, py); ctx.stroke();
+        app.ticker.add((delta) => {
+            if (!isFlying) return;
 
-            // کێشانی فڕۆکە بە کۆد (نەک وێنە) بۆ ئەوەی لۆدینگ نەکات
-            ctx.fillStyle = "red"; ctx.fillRect(px-20, py-10, 40, 20);
+            multiplier += speed;
+            document.getElementById('m-display').innerText = multiplier.toFixed(2) + "x";
 
-            if(Math.random() < 0.006 && m > 1.2) {
-                flying = false; document.getElementById('m-val').innerText = "FLEW AWAY";
-                setTimeout(() => location.reload(), 2000);
-            } else requestAnimationFrame(update);
-        }
-    </script>
+            // لۆژیکی دروستکردنی کێرڤ (Parabolic curve)
+            let x = (multiplier - 1) * 200;
+            let y = Math.pow(multiplier - 1, 1.3) * 150;
+
+            plane.x = 100 + x;
+            plane.y = app.screen.height - 100 - y;
+
+            // کێشانی هێڵی زەردی دوای فڕۆکەکە
+            line.clear();
+            line.lineStyle(6, 0xffb500, 1);
+            line.moveTo(100, app.screen.height - 100);
+            line.quadraticCurveTo(plane.x / 2 + 50, app.screen.height - 100, plane.x, plane.y + 12);
+
+            // لۆژیکی تەقینەوە (ڕێژەیی)
+            if (Math.random() < 0.004 && multiplier > 1.3) {
+                crash();
+            }
+        });
+    }
+
+    function crash() {
+        isFlying = false;
+        document.getElementById('m-display').innerText = "FLEW AWAY!";
+        document.getElementById('m-display').style.color = "#ff3366";
+        setTimeout(() => {
+            location.reload();
+        }, 2000);
+    }
+
+    function resetGame() {
+        isFlying = false;
+        const btn = document.getElementById('bet-btn');
+        btn.innerText = "PLACE BET";
+        btn.classList.remove('active');
+    }
+</script>
+
 </body>
 </html>
