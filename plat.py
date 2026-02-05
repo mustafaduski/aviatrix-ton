@@ -18,3 +18,14 @@ if __name__ == '__main__':
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler('start', start))
     app.run_polling()
+import http.server
+import socketserver
+import threading
+
+def run_fake_server():
+    handler = http.server.SimpleHTTPRequestHandler
+    with socketserver.TCPServer(("", 8000), handler) as httpd:
+        httpd.serve_forever()
+
+# ڤی سێرڤەری ل پاشبنەمایێ ڕان دکەت دا کۆیەب ڕازی ببیت
+threading.Thread(target=run_fake_server, daemon=True).start()
