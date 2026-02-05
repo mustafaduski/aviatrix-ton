@@ -3,145 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviatrix Enterprise Edition</title>
+    <title>Aviatrix Enterprise</title>
     <style>
-        :root { --bg: #0c0d12; --panel: #1c1f2e; --accent: #2855f5; --gold: #ffb500; }
-        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; }
+        :root { --bg: #0c0d12; --accent: #2855f5; --gold: #ffb500; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; height: 100vh; }
         
-        /* شاشەی بارکردن (بۆ چارەسەری وێنە شکاوەکان) */
-        #loader { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .progress-bar { width: 200px; height: 4px; background: #333; margin-top: 20px; border-radius: 2px; overflow: hidden; }
-        #progress { width: 0%; height: 100%; background: var(--accent); transition: width 0.3s; }
+        /* شاشەی Loading بۆ ئەوەی وێنەکان وەک ❓ دەرنەکەون */
+        #preloader { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #222; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ناوچەی یاری پڕۆفیشناڵ */
-        #game-container { position: relative; height: 65vh; width: 100%; background: radial-gradient(circle at bottom left, #1e213a 0%, #0c0d12 100%); }
+        /* ناوچەی گرافیکی یاری */
+        #game-wrapper { position: relative; height: 60vh; width: 100%; background: radial-gradient(circle at bottom left, #1e213a 0%, #0c0d12 100%); }
         canvas { display: block; width: 100%; height: 100%; }
-        .multiplier-overlay { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 5.5rem; font-weight: 900; font-style: italic; pointer-events: none; text-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        .m-display { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; font-weight: 900; font-style: italic; color: white; pointer-events: none; }
 
-        /* پەنەلی گرەوکردنی کۆمپانیا */
-        .controls { height: 35vh; background: #0f111a; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 2px solid #232635; }
-        .bet-card { background: var(--panel); border-radius: 20px; padding: 20px; border: 1px solid #2d3045; display: flex; flex-direction: column; justify-content: space-between; }
-        .bet-btn { background: linear-gradient(180deg, var(--accent), #1a3ab3); border: none; color: white; padding: 20px; border-radius: 15px; font-weight: 900; font-size: 1.3rem; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 15px rgba(40, 85, 245, 0.3); }
-        .bet-btn.active { background: linear-gradient(180deg, var(--gold), #e68a00); color: black; box-shadow: 0 5px 20px rgba(255, 181, 0, 0.4); }
+        /* پەنەلی دوگمەکان وەک وێنە ئەسڵییەکە */
+        .ui-panel { height: 40vh; background: #0f111a; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 2px solid #232635; }
+        .bet-box { background: #1c1f2e; border-radius: 20px; padding: 20px; border: 1px solid #2d3045; display: flex; flex-direction: column; justify-content: space-between; }
+        .main-btn { background: linear-gradient(180deg, var(--accent), #1a3ab3); border: none; color: white; padding: 18px; border-radius: 15px; font-weight: 900; font-size: 1.3rem; cursor: pointer; transition: 0.2s; }
+        .main-btn.active { background: linear-gradient(180deg, var(--gold), #e68a00); color: black; }
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <h2 id="status">Aviatrix Loading...</h2>
-        <div class="progress-bar"><div id="progress"></div></div>
+    <div id="preloader">
+        <div class="spinner"></div>
+        <p>Aviatrix Loading Assets...</p>
     </div>
 
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
-        <div class="multiplier-overlay" id="mult-text">1.00x</div>
+    <div id="game-wrapper">
+        <canvas id="skyCanvas"></canvas>
+        <div class="m-display" id="mult-val">1.00x</div>
     </div>
 
-    <div class="controls">
-        <div class="bet-card">
-            <div style="text-align:center; font-size: 1.6rem; color: var(--gold); font-weight: 900;">100 TON</div>
-            <button class="bet-btn" onclick="handleBet(this)">PLACE BET</button>
+    <div class="ui-panel">
+        <div class="bet-box">
+            <div style="text-align:center; font-size: 1.5rem; color: var(--gold); font-weight: 900;">100 TON</div>
+            <button class="main-btn" onclick="btnAction(this)">PLACE BET</button>
         </div>
-        <div class="bet-card">
-            <div style="text-align:center; font-size: 1.6rem; color: var(--gold); font-weight: 900;">100 TON</div>
-            <button class="bet-btn" onclick="handleBet(this)">PLACE BET</button>
+        <div class="bet-box">
+            <div style="text-align:center; font-size: 1.5rem; color: var(--gold); font-weight: 900;">100 TON</div>
+            <button class="main-btn" onclick="btnAction(this)">PLACE BET</button>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('skyCanvas');
         const ctx = canvas.getContext('2d');
-        const multText = document.getElementById('mult-text');
+        const multVal = document.getElementById('mult-val');
         let multiplier = 1.00;
-        let isFlying = false;
-        let planeImg = new Image();
+        let flying = false;
+        let plane = new Image();
         let frame = 0;
 
-        // سیستەمی لۆدکردنی وێنە (بۆ ئەوەی نیشانەی پرسیار دەرنەچێت)
-        planeImg.src = 'https://raw.githubusercontent.com/fbeeper/fbeeper.github.io/master/aviator-plane.png';
-        planeImg.onload = () => {
-            document.getElementById('progress').style.width = '100%';
-            setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
-            resize();
-            drawStatic();
+        // دڵنیابوونەوە لە لۆدبوونی وێنە پێش دەستپێکردن
+        plane.src = 'https://raw.githubusercontent.com/fbeeper/fbeeper.github.io/master/aviator-plane.png';
+        plane.onload = () => {
+            document.getElementById('preloader').style.display = 'none';
+            init();
         };
 
-        function resize() {
-            canvas.width = window.innerWidth * window.devicePixelRatio;
+        function init() {
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
             canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            renderStatic();
         }
 
-        function handleBet(btn) {
+        function btnAction(btn) {
             if (btn.innerText === "PLACE BET") {
                 btn.innerText = "CASH OUT"; btn.classList.add('active');
-                if (!isFlying) startRound();
+                if (!flying) startGame();
             } else {
-                alert("Win: " + (100 * multiplier).toFixed(2) + " TON");
-                resetUI();
+                alert("Win: " + (100 * multiplier).toFixed(2));
+                reset();
             }
         }
 
-        function startRound() {
-            isFlying = true; multiplier = 1.00;
-            animate();
+        function startGame() {
+            flying = true; multiplier = 1.00;
+            update();
         }
 
-        function animate() {
-            if (!isFlying) return;
+        function update() {
+            if (!flying) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            multiplier += 0.005;
-            multText.innerText = multiplier.toFixed(2) + "x";
+            multiplier += 0.006;
+            multVal.innerText = multiplier.toFixed(2) + "x";
 
-            // لۆژیکی ماتماتیکی بۆ دروستکردنی کێرڤی فڕین (Parabolic Curve)
-            let x = (multiplier - 1) * 350;
-            let y = Math.pow(multiplier - 1, 1.4) * 300;
-            let drawX = 100 + x;
-            let drawY = canvas.height - 150 - y;
+            // کێرڤی فڕینی پڕۆفیشناڵ
+            let x = (multiplier - 1) * 400;
+            let y = Math.pow(multiplier - 1, 1.3) * 350;
+            let currentX = 150 + x;
+            let currentY = canvas.height - 150 - y;
 
-            // کێشانی هێڵە زەردە پڕۆفیشناڵەکە
+            // کێشانی هێڵە زەردە داینامیکییەکە
             ctx.beginPath();
             ctx.strokeStyle = '#ffb500';
-            ctx.lineWidth = 6;
-            ctx.lineCap = 'round';
-            ctx.moveTo(100, canvas.height - 150);
-            ctx.quadraticCurveTo(drawX / 2 + 50, canvas.height - 150, drawX, drawY);
+            ctx.lineWidth = 5;
+            ctx.moveTo(150, canvas.height - 150);
+            ctx.quadraticCurveTo(currentX / 2 + 75, canvas.height - 150, currentX, currentY);
             ctx.stroke();
 
-            // کێشانی فڕۆکەکە بە ئەنیمەیشنی لەرینەوە
-            let hover = Math.sin(frame * 0.1) * 10;
-            ctx.drawImage(planeImg, drawX - 60, drawY - 40 + hover, 140, 80);
+            // کێشانی فڕۆکەکە بە ئەنیمەیشنی لەرینەوەی سەر هەوا
+            let float = Math.sin(frame * 0.15) * 8;
+            ctx.drawImage(plane, currentX - 70, currentY - 45 + float, 140, 85);
 
             frame++;
 
-            // لۆژیکی دۆڕان (Crash)
-            if (Math.random() < 0.005 && multiplier > 1.2) {
+            // لۆژیکی تەقینەوە (Crash)
+            if (Math.random() < 0.005 && multiplier > 1.3) {
                 crash();
             } else {
-                requestAnimationFrame(animate);
+                requestAnimationFrame(update);
             }
         }
 
         function crash() {
-            isFlying = false;
-            multText.innerText = "FLEW AWAY!";
-            multText.style.color = "#ff3366";
-            setTimeout(() => {
-                location.reload();
-            }, 2000);
+            flying = false;
+            multVal.innerText = "FLEW AWAY!";
+            multVal.style.color = "#ff3366";
+            setTimeout(() => location.reload(), 2500);
         }
 
-        function resetUI() {
-            document.querySelectorAll('.bet-btn').forEach(b => {
+        function reset() {
+            document.querySelectorAll('.main-btn').forEach(b => {
                 b.innerText = "PLACE BET"; b.classList.remove('active');
             });
         }
 
-        function drawStatic() {
-            ctx.drawImage(planeImg, 100, canvas.height - 180, 140, 80);
+        function renderStatic() {
+            ctx.drawImage(plane, 150, canvas.height - 150, 140, 85);
         }
-
-        window.addEventListener('resize', resize);
     </script>
 </body>
 </html>
