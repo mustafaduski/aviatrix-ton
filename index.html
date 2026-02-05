@@ -7,28 +7,24 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { margin: 0; background: #0c0d12; color: white; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .game-screen { flex: 1.2; background: radial-gradient(circle at center, #1e213a 0%, #0c0d12 100%); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         
-        /* شاشەیا یارییێ */
-        .game-screen { flex: 1.2; background: radial-gradient(circle at center, #1e213a 0%, #0c0d12 100%); position: relative; display: flex; align-items: center; justify-content: center; }
-        
-        /* لیستەیا مێژوویێ */
-        .history-bar { position: absolute; top: 12px; width: 92%; display: flex; gap: 6px; overflow: hidden; justify-content: flex-start; }
+        .history-bar { position: absolute; top: 12px; width: 92%; display: flex; gap: 6px; overflow: hidden; justify-content: flex-start; z-index: 20; }
         .hist-item { background: rgba(28, 31, 46, 0.8); padding: 3px 10px; border-radius: 12px; border: 1px solid #32354a; font-size: 0.75rem; font-weight: bold; }
         
-        /* فڕۆکە و گرافیک */
         .multiplier { font-size: 5rem; font-weight: 900; z-index: 10; text-shadow: 0 0 30px rgba(160, 32, 240, 0.5); font-style: italic; }
-        .plane-container { position: absolute; bottom: 25%; left: 15%; transition: all 0.1s linear; }
         
-        /* وێنەیێ فڕۆکەیا جەنگی یا ڕاستەقینە */
+        .plane-container { position: absolute; bottom: 25%; left: 15%; transition: all 0.1s linear; z-index: 5; }
+        
+        /* قەبارێ فڕۆکەیێ و ستایل */
         .plane-img { 
-            width: 130px; 
-            filter: drop-shadow(0 0 15px #a020f0); 
-            transform: rotate(-5deg); 
+            width: 120px; 
+            filter: drop-shadow(0 0 15px #4d79ff); 
+            transform: rotate(-10deg); 
         }
 
-        /* دابێشکردنا خوارێ */
         .dashboard { background: #0f111a; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-bottom: env(safe-area-inset-bottom); }
-        .bet-card { background: #1c1f2e; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; gap: 12px; border: 1px solid rgba(0,0,0,0); }
+        .bet-card { background: #1c1f2e; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; gap: 12px; border: 1px solid #32354a; }
         .amount-box { background: #0c0d12; border-radius: 10px; padding: 12px; text-align: center; color: #ffb500; font-weight: 800; font-size: 1.4rem; border: 1px solid #32354a; }
         .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
         .q-btn { background: #2a2d3f; border: none; color: white; padding: 8px 0; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
@@ -39,15 +35,13 @@
 <body>
     <div class="game-screen">
         <div class="history-bar">
-            <div class="hist-item" style="color:#9c59ff">6.21x</div>
-            <div class="hist-item" style="color:#00d2ff">3.49x</div>
-            <div class="hist-item" style="color:#9c59ff">10.08x</div>
-            <div class="hist-item" style="color:#fff">1.32x</div>
-            <div class="hist-item" style="color:#fff">1.90x</div>
+            <div class="hist-item" style="color:#9c59ff">2.45x</div>
+            <div class="hist-item" style="color:#00d2ff">1.80x</div>
+            <div class="hist-item" style="color:#fff">1.10x</div>
         </div>
         <div class="multiplier" id="m-val">1.00x</div>
         <div class="plane-container" id="plane-box">
-            <img src="https://i.ibb.co/LzNfV9m/fighter-jet.png" class="plane-img">
+            <img src="https://www.pngplay.com/wp-content/uploads/12/Fighter-Jet-Transparent-File.png" class="plane-img">
         </div>
     </div>
 
@@ -56,12 +50,11 @@
             <div class="amount-box">100</div>
             <div class="quick-actions">
                 <button class="q-btn">1</button>
-                <button class="q-btn">2</button>
                 <button class="q-btn">5</button>
-                <button class="q-btn">100</button>
+                <button class="q-btn">10</button>
+                <button class="q-btn">50</button>
             </div>
             <button class="place-bet-btn" onclick="toggleBet(this)">PLACE BET</button>
-            <div style="text-align:center; font-size:12px; margin-top:5px; color:#6e7191">Auto play <span>⭕</span></div>
         </div>
     </div>
 
@@ -77,31 +70,26 @@
                 btn.classList.add('active');
                 if(!isFlying) startFlight();
             } else {
-                window.Telegram.WebApp.showConfirm("تە " + m.toFixed(2) + "x قازانج کر! وەرگری؟", (ok)=>{
-                    if(ok) resetGame(btn);
-                });
+                resetGame(btn);
             }
         }
 
         function startFlight() {
             isFlying = true;
             m = 1.00;
-            let speed = 0.01;
             const interval = setInterval(() => {
                 if(!isFlying) { clearInterval(interval); return; }
-                m += speed;
-                speed += 0.0001;
+                m += 0.01;
                 mDisplay.innerText = m.toFixed(2) + "x";
                 
-                // جووڵەیا فڕۆکەیێ بەرەڤ سەرێ
-                let pos = (m - 1) * 20;
+                let pos = (m - 1) * 25;
                 plane.style.bottom = (25 + pos) + "%";
-                plane.style.left = (15 + pos/2) + "%";
+                plane.style.left = (15 + pos/1.5) + "%";
 
-                if (Math.random() < 0.005 && m > 2) {
+                if (Math.random() < 0.005 && m > 1.5) {
                     isFlying = false;
-                    alert("فڕۆکە فڕی! (Flew Away)");
-                    resetGame(document.querySelector('.place-bet-btn'));
+                    mDisplay.style.color = "red";
+                    setTimeout(() => { resetGame(document.querySelector('.place-bet-btn')); }, 2000);
                 }
             }, 100);
         }
@@ -110,12 +98,12 @@
             isFlying = false;
             m = 1.00;
             mDisplay.innerText = "1.00x";
+            mDisplay.style.color = "white";
             btn.innerText = "PLACE BET";
             btn.classList.remove('active');
             plane.style.bottom = "25%";
             plane.style.left = "15%";
         }
-
         window.Telegram.WebApp.ready();
     </script>
 </body>
