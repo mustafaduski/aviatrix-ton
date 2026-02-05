@@ -3,97 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviatrix Wallet Pro</title>
+    <title>Aviatrix TON</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { margin: 0; background: #0c0d12; color: white; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .header { background: #1c1f2e; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #32354a; }
-        .wallet { color: #ffb500; font-weight: bold; font-size: 1.2rem; }
-        .game-screen { flex: 1; position: relative; background: radial-gradient(circle, #1e213a 0%, #0c0d12 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .multiplier { font-size: 5rem; font-weight: 900; z-index: 10; font-style: italic; }
-        .plane { position: absolute; bottom: 20%; left: 10%; width: 120px; z-index: 5; transition: transform 0.1s linear; }
-        .plane img { width: 100%; filter: drop-shadow(0 0 15px #4d79ff); }
-        .controls { background: #0f111a; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .bet-card { background: #1c1f2e; border-radius: 15px; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .btn-bet { background: #2855f5; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
-        .btn-bet.active { background: #ff9d00; color: black; }
-        .flew { color: #ff3366 !important; }
+        .header { background: #1c1f2e; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2a2d3d; }
+        .balance-box { color: #ffb500; font-weight: bold; font-size: 1.3rem; }
+        .game-viewport { flex: 1; position: relative; background: radial-gradient(circle, #1e213a 0%, #0c0d12 100%); display: flex; align-items: center; justify-content: center; }
+        .multiplier { font-size: 5rem; font-weight: 900; z-index: 10; font-style: italic; text-shadow: 0 0 20px rgba(77, 121, 255, 0.5); }
+        .plane-container { position: absolute; bottom: 20%; left: 10%; width: 120px; z-index: 5; transition: transform 0.1s linear; }
+        .plane-container img { width: 100%; filter: drop-shadow(0 0 10px #4d79ff); }
+        .controls { background: #0f111a; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 30px; }
+        .bet-btn { background: #2855f5; color: white; border: none; padding: 18px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
+        .bet-btn.cashout { background: #ff9d00; color: black; }
+        .flew-text { color: #ff3366 !important; }
     </style>
 </head>
 <body>
     <div class="header">
-        <div>Aviatrix TON</div>
-        <div class="wallet">💰 <span id="balance">1000</span> $</div>
+        <div style="font-weight: bold;">AVIATRIX PRO</div>
+        <div class="balance-box">💰 <span id="bal-amount">1000</span> $</div>
     </div>
-    <div class="game-screen">
-        <div id="m-val" class="multiplier">1.00x</div>
-        <div id="plane-box" class="plane">
+    <div class="game-viewport">
+        <div id="m-display" class="multiplier">1.00x</div>
+        <div id="plane" class="plane-container">
             <img src="https://raw.githubusercontent.com/fbeeper/fbeeper.github.io/master/aviator-plane.png">
         </div>
     </div>
     <div class="controls">
-        <div class="bet-card">
-            <button class="btn-bet" onclick="handleBet(this)">بەستن (100$)</button>
-        </div>
-        <div class="bet-card">
-            <button class="btn-bet" onclick="handleBet(this)">بەستن (100$)</button>
-        </div>
+        <button class="bet-btn" onclick="startBet(this)">بەستن (100$)</button>
+        <button class="bet-btn" onclick="startBet(this)">بەستن (100$)</button>
     </div>
 
     <script>
         let balance = 1000;
-        let m = 1.00;
-        let isFlying = false;
-        let gameTimer;
-        const mDisplay = document.getElementById('m-val');
-        const bDisplay = document.getElementById('balance');
-        const plane = document.getElementById('plane-box');
-
-        function handleBet(btn) {
+        let mult = 1.00;
+        let isActive = false;
+        let timer;
+        
+        function startBet(btn) {
             if (btn.innerText.includes("بەستن")) {
-                if (balance < 100) return alert("پارەت بەش ناکات!");
+                if (balance < 100) return alert("باڵانسەکەت بەش ناکات!");
                 balance -= 100;
-                bDisplay.innerText = balance;
-                btn.innerText = "وەرگرتن (CASH OUT)";
-                btn.classList.add('active');
-                if (!isFlying) startFlight();
+                document.getElementById('bal-amount').innerText = balance;
+                btn.innerText = "CASH OUT";
+                btn.classList.add('cashout');
+                if (!isActive) runGame();
             } else {
-                let win = 100 * m;
+                let win = 100 * mult;
                 balance += win;
-                bDisplay.innerText = Math.floor(balance);
-                alert("تە " + win.toFixed(2) + "$ قازانج کرد!");
-                resetBtn(btn);
+                document.getElementById('bal-amount').innerText = Math.floor(balance);
+                alert("پیرۆزە! " + win.toFixed(2) + "$ تە وەرگرت.");
+                reset(btn);
             }
         }
 
-        function startFlight() {
-            isFlying = true;
-            m = 1.00;
-            mDisplay.classList.remove('flew');
-            gameTimer = setInterval(() => {
-                m += 0.01;
-                mDisplay.innerText = m.toFixed(2) + "x";
-                let p = (m - 1) * 35;
-                plane.style.transform = `translate(${p}px, -${p}px)`;
-                if (Math.random() < 0.007 && m > 1.2) crash();
+        function runGame() {
+            isActive = true; mult = 1.00;
+            document.getElementById('m-display').classList.remove('flew-text');
+            timer = setInterval(() => {
+                mult += 0.01;
+                document.getElementById('m-display').innerText = mult.toFixed(2) + "x";
+                let move = (mult - 1) * 35;
+                document.getElementById('plane').style.transform = `translate(${move}px, -${move}px)`;
+                if (Math.random() < 0.007 && mult > 1.2) stopGame();
             }, 100);
         }
 
-        function crash() {
-            clearInterval(gameTimer);
-            isFlying = false;
-            mDisplay.innerText = "فڕۆکە فڕی!";
-            mDisplay.classList.add('flew');
+        function stopGame() {
+            clearInterval(timer);
+            isActive = false;
+            document.getElementById('m-display').innerText = "فڕی!";
+            document.getElementById('m-display').classList.add('flew-text');
             setTimeout(() => {
-                document.querySelectorAll('.btn-bet').forEach(resetBtn);
-                mDisplay.innerText = "1.00x";
-                plane.style.transform = "translate(0,0)";
+                document.querySelectorAll('.bet-btn').forEach(reset);
+                document.getElementById('m-display').innerText = "1.00x";
+                document.getElementById('plane').style.transform = "translate(0,0)";
             }, 2000);
         }
 
-        function resetBtn(btn) {
+        function reset(btn) {
             btn.innerText = "بەستن (100$)";
-            btn.classList.remove('active');
+            btn.classList.remove('cashout');
         }
     </script>
 </body>
