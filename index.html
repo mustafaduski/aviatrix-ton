@@ -2,139 +2,153 @@
 <html lang="ku" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Aviatrix Real Clone</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aviatrix Animated Pro</title>
     <style>
-        :root { --main-blue: #2855f5; --bg-dark: #12131a; --panel-bg: #1c1f2e; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg-dark); color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        :root { --bg-sky: #87ceeb; --panel-dark: #1c1f2e; }
+        body { margin: 0; background: #0c0d12; color: white; font-family: sans-serif; overflow: hidden; height: 100vh; }
 
-        /* بەشی سەرەوە (Wallet & Icons) */
-        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: rgba(0,0,0,0.3); }
-        .balance-box { background: #000; padding: 5px 15px; border-radius: 20px; color: #ffb500; font-weight: bold; border: 1px solid #32354a; display: flex; align-items: center; gap: 5px; }
+        /* شاشەی فڕین بە ئەنیمەیشنی هەور */
+        .viewport { 
+            position: relative; height: 60vh; 
+            background: linear-gradient(to bottom, #4a90e2, #87ceeb); 
+            overflow: hidden; 
+        }
 
-        /* ناوچەی فڕین (وەک وێنە ئەسڵییەکە) */
-        .game-viewport { flex: 1; position: relative; background: linear-gradient(to bottom, #7fb5ff, #f0b5ff); overflow: hidden; border-bottom: 3px solid #252839; }
-        /* باکگراوندی هەورەکان */
-        .clouds { position: absolute; width: 200%; height: 100%; background: url('https://www.transparenttextures.com/patterns/cloudy-day.png'); opacity: 0.4; animation: moveClouds 20s linear infinite; }
-        @keyframes moveClouds { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        /* ئەنیمەیشنی هەورەکان لە پاشبنەما */
+        .cloud-layer {
+            position: absolute; width: 200%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/clouds.png');
+            animation: moveClouds 15s linear infinite;
+            opacity: 0.6;
+        }
 
-        .multiplier { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); font-size: 4.5rem; font-weight: 900; z-index: 10; text-shadow: 2px 2px 10px rgba(0,0,0,0.2); color: white; }
+        @keyframes moveClouds {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
 
-        /* فڕۆکە سوورە ئەسڵییەکە */
-        .plane-container { position: absolute; bottom: 15%; left: 10%; width: 150px; z-index: 5; transition: transform 0.1s linear; }
-        .plane-container img { width: 100%; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3)); }
+        .multiplier { 
+            position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); 
+            font-size: 5rem; font-weight: 900; z-index: 10; font-style: italic;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
 
-        /* هێڵی زەردی گرافیکەکە */
-        .chart-svg { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+        /* ئەنیمەیشنی فڕۆکە (لەرینەوەی سروشتی) */
+        .plane { 
+            position: absolute; bottom: 20%; left: 10%; width: 140px; z-index: 5;
+            animation: planeHover 2s ease-in-out infinite;
+        }
 
-        /* پەنەلی دوگمەکان (Betting Panel) */
-        .controls-grid { background: #0f111a; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .bet-card { background: var(--panel-bg); border-radius: 20px; padding: 12px; border: 1px solid #2d3045; }
-        .amount-row { display: flex; justify-content: space-between; background: #000; border-radius: 10px; padding: 8px; margin-bottom: 10px; font-weight: bold; color: #ffb500; font-size: 1.2rem; }
-        .quick-amounts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px; }
-        .q-btn { background: #2a2d3d; border: none; color: #fff; padding: 5px; border-radius: 8px; font-size: 0.8rem; }
-        .place-bet-btn { width: 100%; padding: 15px; border-radius: 15px; border: none; color: white; font-weight: 900; font-size: 1.2rem; background: linear-gradient(180deg, #2855f5, #1a3ab3); cursor: pointer; box-shadow: 0 4px 15px rgba(40, 85, 245, 0.4); }
-        .place-bet-btn.active { background: linear-gradient(180deg, #ff9d00, #e68a00); color: black; }
+        @keyframes planeHover {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
 
-        .flew-text { color: #ff3366 !important; }
+        /* هێڵی فڕین (Line) */
+        .flight-path {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2; pointer-events: none;
+        }
+
+        /* دیزاینی دوگمەکان وەک وێنە ئەسڵییەکە */
+        .controls { 
+            height: 40vh; background: #0f111a; padding: 15px; 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        }
+        .bet-card { 
+            background: var(--panel-dark); border-radius: 20px; padding: 15px; 
+            border: 1px solid #2d3045; display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .bet-btn { 
+            background: linear-gradient(180deg, #2855f5, #1a3ab3); 
+            border: none; color: white; padding: 18px; border-radius: 15px; 
+            font-weight: 900; font-size: 1.2rem; cursor: pointer; transition: 0.3s;
+        }
+        .bet-btn.active { background: #ff9d00; color: black; box-shadow: 0 0 20px #ff9d00; }
+        
+        .crash-anim { animation: flyOut 0.5s forwards; }
+        @keyframes flyOut { to { transform: translate(500px, -500px) scale(0.5); opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div class="top-nav">
-        <div style="font-weight: bold; color: #aaa;">Aviatrix</div>
-        <div class="balance-box">💰 <span id="balance">1000</span></div>
-    </div>
-
-    <div class="game-viewport">
-        <div class="clouds"></div>
+    <div class="viewport">
+        <div class="cloud-layer"></div>
         <div class="multiplier" id="m-val">1.00x</div>
         
-        <svg class="chart-svg">
-            <path id="graph-line" d="M 0 500 Q 50 500 50 500" fill="none" stroke="#ffb500" stroke-width="5" stroke-linecap="round" />
+        <svg class="flight-path">
+            <path id="curve" d="M 0 500 Q 50 500 50 500" fill="none" stroke="#ffcc00" stroke-width="6" stroke-linecap="round" />
         </svg>
 
-        <div class="plane-container" id="plane">
-            <img src="https://raw.githubusercontent.com/fbeeper/fbeeper.github.io/master/aviator-plane.png" alt="plane">
+        <div class="plane" id="plane-box">
+            <img src="https://raw.githubusercontent.com/fbeeper/fbeeper.github.io/master/aviator-plane.png" width="100%">
         </div>
     </div>
 
-    <div class="controls-grid">
+    <div class="controls">
         <div class="bet-card">
-            <div class="amount-row"><span>-</span> 100 <span>+</span></div>
-            <div class="quick-amounts">
-                <button class="q-btn">1</button><button class="q-btn">2</button><button class="q-btn">5</button><button class="q-btn">10</button>
-            </div>
-            <button class="place-bet-btn" onclick="handleBet(this)">PLACE BET</button>
+            <div style="text-align:center; font-size: 1.5rem; font-weight: bold; color: #ffcc00;">100</div>
+            <button class="bet-btn" onclick="bet(this)">PLACE BET</button>
         </div>
         <div class="bet-card">
-            <div class="amount-row"><span>-</span> 100 <span>+</span></div>
-            <div class="quick-amounts">
-                <button class="q-btn">1</button><button class="q-btn">2</button><button class="q-btn">5</button><button class="q-btn">10</button>
-            </div>
-            <button class="place-bet-btn" onclick="handleBet(this)">PLACE BET</button>
+            <div style="text-align:center; font-size: 1.5rem; font-weight: bold; color: #ffcc00;">100</div>
+            <button class="bet-btn" onclick="bet(this)">PLACE BET</button>
         </div>
     </div>
 
     <script>
-        let balance = 1000;
-        let mult = 1.00;
+        let m = 1.00;
         let isFlying = false;
-        let gameTimer;
-        const mDisplay = document.getElementById('m-val');
-        const plane = document.getElementById('plane');
-        const line = document.getElementById('graph-line');
+        let loop;
 
-        function handleBet(btn) {
+        function bet(btn) {
             if (btn.innerText === "PLACE BET") {
-                if (balance < 100) return alert("باڵانسەکەت بەش ناکات!");
-                balance -= 100;
-                document.getElementById('balance').innerText = balance;
                 btn.innerText = "CASH OUT";
                 btn.classList.add('active');
-                if (!isFlying) startRound();
+                if (!isFlying) start();
             } else {
-                let win = 100 * mult;
-                balance += win;
-                document.getElementById('balance').innerText = Math.floor(balance);
-                resetBtn(btn);
+                alert("تە " + (100 * m).toFixed(2) + "$ قازانج کرد!");
+                reset(btn);
             }
         }
 
-        function startRound() {
-            isFlying = true; mult = 1.00;
-            mDisplay.classList.remove('flew-text');
-            gameTimer = setInterval(() => {
-                mult += 0.01;
-                mDisplay.innerText = mult.toFixed(2) + "x";
+        function start() {
+            isFlying = true; m = 1.00;
+            const plane = document.getElementById('plane-box');
+            const curve = document.getElementById('curve');
+            plane.classList.remove('crash-anim');
+            plane.style.opacity = "1";
+
+            loop = setInterval(() => {
+                m += 0.01;
+                document.getElementById('m-val').innerText = m.toFixed(2) + "x";
                 
-                let x = (mult - 1) * 40;
-                let y = (mult - 1) * 30;
-                plane.style.transform = `translate(${x}px, -${y}px)`;
+                // جوڵەی فڕۆکە بەرەو سەرەوە بە ئەنیمەیشن
+                let x = (m - 1) * 50;
+                let y = (m - 1) * 40;
+                plane.style.left = (10 + x/5) + "%";
+                plane.style.bottom = (20 + y/5) + "%";
 
                 // نوێکردنەوەی هێڵە زەردەکە
-                let viewHeight = document.querySelector('.game-viewport').offsetHeight;
-                line.setAttribute('d', `M 0 ${viewHeight * 0.85} Q ${x/2} ${viewHeight * 0.85} ${x + 50} ${viewHeight * 0.85 - y}`);
+                curve.setAttribute('d', `M 0 500 Q ${x*2} 500 ${x*5} ${500 - y*5}`);
 
-                if (Math.random() < 0.006 && mult > 1.3) crash();
+                if (Math.random() < 0.007 && m > 1.3) stop();
             }, 100);
         }
 
-        function crash() {
-            clearInterval(gameTimer);
+        function stop() {
+            clearInterval(loop);
             isFlying = false;
-            mDisplay.innerText = "FLEW AWAY";
-            mDisplay.classList.add('flew-text');
+            document.getElementById('m-val').innerText = "FLEW AWAY!";
+            document.getElementById('plane-box').classList.add('crash-anim');
+            
             setTimeout(() => {
-                document.querySelectorAll('.place-bet-btn').forEach(resetBtn);
-                mDisplay.innerText = "1.00x";
-                plane.style.transform = "translate(0,0)";
-                line.setAttribute('d', "M 0 500 Q 50 500 50 500");
-            }, 2500);
+                location.reload(); 
+            }, 2000);
         }
 
-        function resetBtn(btn) {
+        function reset(btn) {
             btn.innerText = "PLACE BET";
             btn.classList.remove('active');
         }
