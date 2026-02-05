@@ -3,71 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviatrix Pro</title>
+    <title>Aviatrix Pro - TON Connect</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        body { margin: 0; background: #0c0d12; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
-        .game-header { padding: 10px; display: flex; justify-content: space-between; background: #151724; font-size: 0.9rem; color: #00d2ff; }
-        .game-area { flex-grow: 1; background: linear-gradient(to bottom, #1a1c2c, #4a1942); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 3px solid #32354a; }
-        .stars { position: absolute; width: 100%; height: 100%; background: url('https://www.transparenttextures.com/patterns/stardust.png'); opacity: 0.3; }
-        .multiplier { font-size: 4.5rem; font-weight: 900; z-index: 10; text-shadow: 0 0 25px rgba(160, 32, 240, 0.9); font-italic: italic; }
+        body { margin: 0; background: #0c0d12; color: white; font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        .game-header { padding: 10px; display: flex; justify-content: space-between; align-items: center; background: #151724; }
+        #ton-connect-button { scale: 0.8; } /* قەبارێ دوگمەیا وەلێتی */
+        .game-area { flex-grow: 1; background: linear-gradient(to bottom, #1a1c2c, #4a1942); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .multiplier { font-size: 4.5rem; font-weight: 900; z-index: 10; text-shadow: 0 0 20px #a020f0; }
         .plane-container { position: absolute; bottom: 20%; left: 15%; transition: all 0.1s linear; }
-        /* وێنەیێ فڕۆکێ یێ پڕۆفیشناڵ */
-        .plane-svg { width: 100px; filter: drop-shadow(0 0 15px #a020f0); transform: rotate(-5deg); }
-        .controls { background: #151724; padding: 25px 20px; border-radius: 25px 25px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); }
-        .bet-button { width: 100%; background: linear-gradient(180deg, #b030ff 0%, #8010d0 100%); color: white; border: none; padding: 18px; border-radius: 12px; font-size: 1.6rem; font-weight: 900; box-shadow: 0 4px 0 #500880; transition: 0.1s; }
-        .bet-button:active { transform: translateY(4px); box-shadow: none; }
-        .wallet-card { background: #0c0d12; margin-top: 15px; padding: 10px; border-radius: 8px; border: 1px border-style: dashed; border-color: #32354a; text-align: center; }
-        .wallet-addr { font-size: 0.65rem; color: #00d2ff; word-break: break-all; font-family: monospace; }
+        .plane-svg { width: 90px; filter: drop-shadow(0 0 15px #a020f0); }
+        .controls { background: #151724; padding: 20px; border-radius: 20px 20px 0 0; }
+        .bet-button { width: 100%; background: #02c076; color: white; border: none; padding: 18px; border-radius: 12px; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
+        .bet-button:disabled { background: #32354a; cursor: not-allowed; }
+        .status-text { text-align: center; font-size: 0.8rem; margin-top: 10px; color: #848e9c; }
     </style>
 </head>
 <body>
     <div class="game-header">
-        <span>Aviatrix Pro</span>
-        <span>Balance: 100.00 TON</span>
+        <div id="ton-connect-button"></div> <div style="color: #00d2ff;">Aviatrix Pro</div>
     </div>
+
     <div class="game-area">
-        <div class="stars"></div>
         <div class="multiplier" id="m-val">1.00x</div>
         <div class="plane-container" id="plane-box">
             <svg class="plane-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M62,32c0-1.1-0.9-2-2-2H44.7L31,10H24l7,20h-9l-4-6h-6l2,6l-2,6h6l4-6h9l-7,20h7l13.7-20H60C61.1,34,62,33.1,62,32z" fill="#a020f0"/></svg>
         </div>
     </div>
+
     <div class="controls">
-        <button class="bet-button" onclick="betNow()">BET</button>
-        <div class="wallet-card">
-            <div style="font-size: 0.7rem; color: #6e7191; margin-bottom: 5px;">DEPOSIT ADDRESS (TON)</div>
-            <div class="wallet-addr">UQAinxO5Eym0OB4mHquKX1UIpLeK9gdb6OuKrdZE6v63NgPH</div>
-        </div>
+        <button class="bet-button" id="bet-btn" onclick="handleBet()">BET</button>
+        <div class="status-text" id="status">Please connect your wallet to play</div>
     </div>
 
     <script>
+        // ١. دەستپێکرنا TON Connect
+        const tonConnectUI = new TONConnectUI.TonConnectUI({
+            manifestUrl: 'https://mustafaduski.github.io/aviatrix-ton/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-button'
+        });
+
+        // ٢. یاری (Multiplier)
         let m = 1.00;
-        let plane = document.getElementById('plane-box');
-        let mVal = document.getElementById('m-val');
-        let isCrashed = false;
+        setInterval(() => {
+            m += 0.01;
+            document.getElementById('m-val').innerText = m.toFixed(2) + "x";
+            let plane = document.getElementById('plane-box');
+            plane.style.left = (15 + Math.min((m-1)*30, 60)) + "%";
+            plane.style.bottom = (20 + Math.min((m-1)*15, 40)) + "%";
+        }, 100);
 
-        function update() {
-            if(!isCrashed) {
-                m += 0.01;
-                mVal.innerText = m.toFixed(2) + "x";
-                
-                // لێکدانا فڕینێ
-                let x = Math.min((m - 1) * 40, 65);
-                let y = Math.min((m - 1) * 20, 50);
-                plane.style.left = (15 + x) + "%";
-                plane.style.bottom = (20 + y) + "%";
-
-                // لەرینا فڕۆکێ
-                plane.style.transform = translateY(${Math.sin(Date.now()/150)*4}px);
+        // ٣. کارکرنا دوگمەیا BET
+        async function handleBet() {
+            const connectedWallet = tonConnectUI.wallet;
+            
+            if (!connectedWallet) {
+                window.Telegram.WebApp.showAlert("تکایە بەری هەمی تشتان وەلێتێ خۆ (Connect) بکە!");
+                return;
             }
-            requestAnimationFrame(update);
-        }
-        update();
 
-        function betNow() {
-            window.Telegram.WebApp.showConfirm("Are you sure you want to place this bet?");
+            // ئەگەر وەلێت یێ بەستى بیت، داخوازییا پارەی دکەت
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 60,
+                messages: [
+                    {
+                        address: "UQAinxO5Eym0OB4mHquKX1UIpLeK9gdb6OuKrdZE6v63NgPH", // وەلێتێ تە
+                        amount: "1000000000" // ئەڤە رامانا ١ تەن ددەت (ب نانۆ تەن)
+                    }
+                ]
+            };
+
+            try {
+                await tonConnectUI.sendTransaction(transaction);
+                window.Telegram.WebApp.showAlert("Bet Placed Successfully!");
+            } catch (e) {
+                console.error(e);
+            }
         }
+
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
     </script>
