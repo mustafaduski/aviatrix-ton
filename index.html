@@ -122,3 +122,41 @@
 
 </body>
 </html>
+<style>
+    .history-bar {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        gap: 5px;
+        pointer-events: auto;
+    }
+    .hist-item {
+        background: #1c1f2e;
+        color: #ffb500;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        border: 1px solid #2d3045;
+    }
+</style>
+
+<div class="history-bar" id="history-list">
+    </div>
+
+<script>
+    // لۆژیکی زیادکردنی ئەنجامی خولەکان بۆ مێژوو
+    function addToHistory(value) {
+        const list = document.getElementById('history-list');
+        const item = document.createElement('div');
+        item.className = 'hist-item';
+        item.innerText = value.toFixed(2) + "x";
+        
+        // ڕەنگی جیاواز بۆ ئەنجامەکان
+        if(value < 2) item.style.color = "#ff3366";
+        else if(value >= 10) item.style.color = "#9d50bb";
+        
+        list.prepend(item);
+        if(list.children.length > 8) list.lastChild.remove();
+    }
+</script>
