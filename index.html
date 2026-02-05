@@ -3,30 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Aviatrix Dashboard Pro</title>
+    <title>Aviatrix Pro Elite</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { margin: 0; background: #0c0d12; color: white; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* شاشەیا فڕینێ */
-        .game-screen { flex: 1.2; background: radial-gradient(circle at center, #1e213a 0%, #0c0d12 100%); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .history-bar { position: absolute; top: 10px; width: 90%; display: flex; gap: 5px; overflow: hidden; font-size: 0.7rem; opacity: 0.7; }
-        .hist-item { background: #1c1f2e; padding: 2px 8px; border-radius: 10px; border: 1px solid #32354a; }
+        /* شاشەیا سەرەکی */
+        .game-screen { flex: 1.2; background: radial-gradient(circle at center, #1e213a 0%, #0c0d12 100%); position: relative; display: flex; align-items: center; justify-content: center; border-bottom: 2px solid #2a2d3f; }
         
-        .multiplier { font-size: 4.5rem; font-weight: 900; z-index: 10; text-shadow: 0 0 20px rgba(255,255,255,0.3); }
-        .plane-container { position: absolute; bottom: 20%; left: 10%; transition: all 0.1s linear; }
-        .plane-img { width: 130px; filter: drop-shadow(0 0 15px #a020f0); }
+        /* لیستا مێژوویێ (History) */
+        .history-bar { position: absolute; top: 12px; width: 92%; display: flex; gap: 6px; overflow: hidden; justify-content: flex-start; }
+        .hist-item { background: rgba(28, 31, 46, 0.8); padding: 3px 10px; border-radius: 12px; border: 1px solid #32354a; font-size: 0.75rem; font-weight: bold; }
 
-        /* پشکا گرەوێ (Dashboard) */
-        .dashboard { flex: 1.5; background: #151724; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 2px solid #2a2d3f; }
-        .bet-card { background: #1c1f2e; border-radius: 15px; padding: 12px; display: flex; flex-direction: column; gap: 10px; border: 1px solid #2a2d3f; }
-        .amount-display { background: #0c0d12; border-radius: 8px; padding: 10px; text-align: center; color: #ffb800; font-weight: bold; font-size: 1.2rem; }
-        .quick-amounts { display: flex; justify-content: space-between; gap: 4px; }
-        .q-btn { background: #2a2d3f; border: none; color: white; padding: 6px; border-radius: 5px; flex: 1; font-size: 0.7rem; }
-        .place-bet-btn { background: #4d79ff; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 0 #2a4dbf; }
-        .place-bet-btn.active { background: #ff4d4d; box-shadow: 0 4px 0 #bf2a2a; }
-        
-        .auto-play { display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: #848e9c; }
+        /* ڕێژە و فڕۆکە */
+        .multiplier { font-size: 5rem; font-weight: 900; z-index: 10; text-shadow: 0 0 30px rgba(160, 32, 240, 0.5); font-style: italic; }
+        .plane-container { position: absolute; bottom: 25%; left: 15%; transition: all 0.1s linear; }
+        .plane-svg { width: 110px; filter: drop-shadow(0 0 15px #a020f0); transform: rotate(-5deg); }
+
+        /* داشبۆردا گرەوێ (Dashboard) */
+        .dashboard { flex: 1.5; background: #0f111a; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-bottom: env(safe-area-inset-bottom); }
+        .bet-card { background: #1c1f2e; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; gap: 12px; border: 1px solid #2a2d3f; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .amount-box { background: #0c0d12; border-radius: 10px; padding: 12px; text-align: center; color: #ffb800; font-weight: 800; font-size: 1.4rem; border: 1px solid #32354a; }
+        .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+        .q-btn { background: #2a2d3f; border: none; color: white; padding: 8px 0; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
+        .place-bet-btn { background: linear-gradient(180deg, #4d79ff 0%, #2a4dbf 100%); color: white; border: none; padding: 18px; border-radius: 12px; font-weight: 900; font-size: 1.1rem; box-shadow: 0 5px 0 #1a358a; transition: 0.1s; }
+        .place-bet-btn.active { background: linear-gradient(180deg, #ff4d4d 0%, #bf2a2a 100%); box-shadow: 0 5px 0 #8a1a1a; }
+        .place-bet-btn:active { transform: translateY(3px); box-shadow: none; }
+        .auto-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: #6e7191; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -35,72 +38,81 @@
             <div class="hist-item" style="color:#9c59ff">6.21</div>
             <div class="hist-item" style="color:#00d2ff">3.49</div>
             <div class="hist-item" style="color:#9c59ff">10.08</div>
-            <div class="hist-item">1.32</div>
-            <div class="hist-item">1.90</div>
+            <div class="hist-item" style="color:#fff">1.32</div>
+            <div class="hist-item" style="color:#fff">1.90</div>
         </div>
         <div class="multiplier" id="m-val">1.00x</div>
         <div class="plane-container" id="plane-box">
-            <img class="plane-img" src="https://raw.githubusercontent.com/mustafaduski/aviatrix-ton/main/plane.png" onerror="this.src='https://svgshare.com/i/157u.svg'">
+            <svg class="plane-svg" viewBox="0 0 64 64"><path d="M62,32c0-1.1-0.9-2-2-2H44.7L31,10H24l7,20h-9l-4-6h-6l2,6l-2,6h6l4-6h9l-7,20h7l13.7-20H60C61.1,34,62,33.1,62,32z" fill="#a020f0"/></svg>
         </div>
     </div>
 
     <div class="dashboard">
         <div class="bet-card">
-            <div class="amount-display">100</div>
-            <div class="quick-amounts">
-                <button class="q-btn">1</button>
-                <button class="q-btn">2</button>
-                <button class="q-btn">5</button>
-                <button class="q-btn">100</button>
+            <div class="amount-box">100</div>
+            <div class="quick-actions">
+                <button class="q-btn">1</button><button class="q-btn">2</button><button class="q-btn">5</button><button class="q-btn">100</button>
             </div>
             <button class="place-bet-btn" onclick="toggleBet(this)">PLACE BET</button>
-            <div class="auto-play">Auto play <span>🔘</span></div>
+            <div class="auto-label">Auto play <span style="color:#02c076">●</span></div>
         </div>
-
         <div class="bet-card">
-            <div class="amount-display">100</div>
-            <div class="quick-amounts">
-                <button class="q-btn">1</button>
-                <button class="q-btn">2</button>
-                <button class="q-btn">5</button>
-                <button class="q-btn">100</button>
+            <div class="amount-box">100</div>
+            <div class="quick-actions">
+                <button class="q-btn">1</button><button class="q-btn">2</button><button class="q-btn">5</button><button class="q-btn">100</button>
             </div>
             <button class="place-bet-btn" onclick="toggleBet(this)">PLACE BET</button>
-            <div class="auto-play">Auto play <span>🔘</span></div>
+            <div class="auto-label">Auto play <span style="color:#6e7191">○</span></div>
         </div>
     </div>
 
     <script>
         let m = 1.00;
         let isFlying = false;
+        const mDisplay = document.getElementById('m-val');
+        const plane = document.getElementById('plane-box');
 
         function toggleBet(btn) {
             if (btn.innerText === "PLACE BET") {
                 btn.innerText = "CASH OUT";
                 btn.classList.add('active');
-                isFlying = true;
+                if(!isFlying) startFlight();
             } else {
-                window.Telegram.WebApp.showAlert("تە قازانج کر: " + m.toFixed(2) + "x");
-                btn.innerText = "PLACE BET";
-                btn.classList.remove('active');
-                isFlying = false;
-                m = 1.00;
-                document.getElementById('m-val').innerText = "1.00x";
+                window.Telegram.WebApp.showConfirm("تە " + m.toFixed(2) + "x قازانج کر! وەرگری؟", (ok)=>{
+                    if(ok) resetGame(btn);
+                });
             }
         }
 
-        function loop() {
+        function startFlight() {
+            isFlying = true;
+            m = 1.00;
+        }
+
+        function resetGame(btn) {
+            btn.innerText = "PLACE BET";
+            btn.classList.remove('active');
+            isFlying = false;
+            mDisplay.innerText = "1.00x";
+            plane.style.left = "15%";
+            plane.style.bottom = "25%";
+        }
+
+        function update() {
             if(isFlying) {
                 m += 0.01;
-                document.getElementById('m-val').innerText = m.toFixed(2) + "x";
-                let p = document.getElementById('plane-box');
-                p.style.left = (10 + Math.min((m-1)*40, 70)) + "%";
-                p.style.bottom = (20 + Math.min((m-1)*20, 55)) + "%";
+                mDisplay.innerText = m.toFixed(2) + "x";
+                let x = Math.min((m-1)*40, 70);
+                let y = Math.min((m-1)*20, 50);
+                plane.style.left = (15 + x) + "%";
+                plane.style.bottom = (25 + y) + "%";
+                plane.style.transform = `translateY(${Math.sin(Date.now()/150)*5}px)`;
             }
-            requestAnimationFrame(loop);
+            requestAnimationFrame(update);
         }
-        loop();
+        update();
 
+        window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
     </script>
 </body>
