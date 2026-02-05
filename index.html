@@ -2,89 +2,155 @@
 <html lang="ku" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviatrix TON</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Aviatrix Professional Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { margin: 0; background: #0c0d12; color: white; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .header { background: #1c1f2e; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2a2d3d; }
-        .balance-box { color: #ffb500; font-weight: bold; font-size: 1.3rem; }
-        .game-viewport { flex: 1; position: relative; background: radial-gradient(circle, #1e213a 0%, #0c0d12 100%); display: flex; align-items: center; justify-content: center; }
-        .multiplier { font-size: 5rem; font-weight: 900; z-index: 10; font-style: italic; text-shadow: 0 0 20px rgba(77, 121, 255, 0.5); }
-        .plane-container { position: absolute; bottom: 20%; left: 10%; width: 120px; z-index: 5; transition: transform 0.1s linear; }
-        .plane-container img { width: 100%; filter: drop-shadow(0 0 10px #4d79ff); }
-        .controls { background: #0f111a; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 30px; }
-        .bet-btn { background: #2855f5; color: white; border: none; padding: 18px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
-        .bet-btn.cashout { background: #ff9d00; color: black; }
-        .flew-text { color: #ff3366 !important; }
+        :root { --main-blue: #2855f5; --bg-dark: #0c0d12; --panel-bg: #1c1f2e; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; overflow: hidden; }
+
+        /* --- شاشەی دەسپێک (Loading Screen) --- */
+        #loader {
+            position: fixed; inset: 0; background: radial-gradient(circle at center, #1e213a, #0c0d12);
+            z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .loader-logo { width: 200px; margin-bottom: 30px; filter: drop-shadow(0 0 10px rgba(77,121,255,0.5)); }
+        .progress-container { width: 70%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff4d4d, #ff9d00); transition: width 0.1s linear; }
+        .loader-text { margin-top: 15px; font-size: 0.9rem; color: #8a8da3; letter-spacing: 1px; }
+
+        /* --- ناوچەی یاری (Game Interface) --- */
+        .game-main { display: none; height: 100vh; flex-direction: column; }
+        .top-nav { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; background: rgba(28, 31, 46, 0.8); }
+        .balance-pill { background: #000; padding: 5px 15px; border-radius: 20px; color: #ffb500; font-weight: bold; border: 1px solid #32354a; }
+
+        .viewport { flex: 1; position: relative; background: url('https://img.freepik.com/free-vector/night-cloudy-sky-background_23-2148824929.jpg'); background-size: cover; overflow: hidden; border-bottom: 2px solid #252839; }
+        .multiplier { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 4.5rem; font-weight: 900; z-index: 10; text-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        
+        .plane-box { position: absolute; bottom: 20%; left: 10%; width: 140px; z-index: 5; transition: transform 0.1s linear; }
+        .plane-box img { width: 100%; filter: drop-shadow(5px 15px 15px rgba(0,0,0,0.6)); }
+
+        /* --- پەنەلی گرەو (Betting Panel) --- */
+        .bet-section { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #0f111a; }
+        .bet-card { background: var(--panel-bg); border-radius: 15px; padding: 12px; border: 1px solid #2d3045; }
+        .amount-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px; }
+        .q-btn { background: #2a2d3d; border: none; color: #fff; padding: 5px; border-radius: 5px; font-size: 0.7rem; }
+        .bet-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; color: white; font-weight: 900; font-size: 1.1rem; background: linear-gradient(180deg, #2855f5, #1a3ab3); cursor: pointer; }
+        .bet-btn.active { background: linear-gradient(180deg, #ff9d00, #e68a00); color: black; }
+
+        .crash-msg { color: #ff3366 !important; animation: shake 0.3s infinite; }
+        @keyframes shake { 0% { transform: translate(-50%, -50%) rotate(0deg); } 50% { transform: translate(-50%, -50%) rotate(2deg); } 100% { transform: translate(-50%, -50%) rotate(0deg); } }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div style="font-weight: bold;">AVIATRIX PRO</div>
-        <div class="balance-box">💰 <span id="bal-amount">1000</span> $</div>
+
+    <div id="loader">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Plane_icon_nose_up.svg/1200px-Plane_icon_nose_up.svg.png" class="loader-logo" alt="Aviatrix">
+        <div class="progress-container"><div id="p-bar" class="progress-bar"></div></div>
+        <div class="loader-text">باردەکرێت...</div>
     </div>
-    <div class="game-viewport">
-        <div id="m-display" class="multiplier">1.00x</div>
-        <div id="plane" class="plane-container">
-            <img src="https://raw.githubusercontent.com/fbeeper/fbeeper.github.io/master/aviator-plane.png">
+
+    <div class="game-main" id="main-ui">
+        <div class="top-nav">
+            <div style="font-weight: bold; font-style: italic; color: #4d79ff;">AVIATRIX</div>
+            <div class="balance-pill">💰 <span id="balance">1000</span></div>
         </div>
-    </div>
-    <div class="controls">
-        <button class="bet-btn" onclick="startBet(this)">بەستن (100$)</button>
-        <button class="bet-btn" onclick="startBet(this)">بەستن (100$)</button>
+
+        <div class="viewport">
+            <div class="multiplier" id="m-val">1.00x</div>
+            <div class="plane-box" id="plane">
+                <img src="https://raw.githubusercontent.com/fbeeper/fbeeper.github.io/master/aviator-plane.png">
+            </div>
+        </div>
+
+        <div class="bet-section">
+            <div class="bet-card">
+                <div class="amount-selector">
+                    <button class="q-btn">1</button><button class="q-btn">2</button><button class="q-btn">5</button><button class="q-btn">100</button>
+                </div>
+                <button class="bet-btn" onclick="placeBet(this)">PLACE BET</button>
+            </div>
+            <div class="bet-card">
+                <div class="amount-selector">
+                    <button class="q-btn">1</button><button class="q-btn">2</button><button class="q-btn">5</button><button class="q-btn">100</button>
+                </div>
+                <button class="bet-btn" onclick="placeBet(this)">PLACE BET</button>
+            </div>
+        </div>
     </div>
 
     <script>
+        // --- ئەنیمەیشنی بارکردن (Loading Animation) ---
+        let p = 0;
+        let pInterval = setInterval(() => {
+            p += Math.random() * 5;
+            document.getElementById('p-bar').style.width = p + "%";
+            if (p >= 100) {
+                clearInterval(pInterval);
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('main-ui').style.display = 'flex';
+            }
+        }, 100);
+
+        // --- مێکانیکی یاری ---
         let balance = 1000;
-        let mult = 1.00;
-        let isActive = false;
-        let timer;
-        
-        function startBet(btn) {
-            if (btn.innerText.includes("بەستن")) {
-                if (balance < 100) return alert("باڵانسەکەت بەش ناکات!");
+        let m = 1.00;
+        let flying = false;
+        let gameLoop;
+
+        function placeBet(btn) {
+            if (btn.innerText === "PLACE BET") {
+                if (balance < 100) return alert("باڵانس تێرناکات!");
                 balance -= 100;
-                document.getElementById('bal-amount').innerText = balance;
+                document.getElementById('balance').innerText = balance;
                 btn.innerText = "CASH OUT";
-                btn.classList.add('cashout');
-                if (!isActive) runGame();
+                btn.classList.add('active');
+                if (!flying) startRound();
             } else {
-                let win = 100 * mult;
-                balance += win;
-                document.getElementById('bal-amount').innerText = Math.floor(balance);
-                alert("پیرۆزە! " + win.toFixed(2) + "$ تە وەرگرت.");
-                reset(btn);
+                let profit = 100 * m;
+                balance += profit;
+                document.getElementById('balance').innerText = Math.floor(balance);
+                resetBtn(btn);
             }
         }
 
-        function runGame() {
-            isActive = true; mult = 1.00;
-            document.getElementById('m-display').classList.remove('flew-text');
-            timer = setInterval(() => {
-                mult += 0.01;
-                document.getElementById('m-display').innerText = mult.toFixed(2) + "x";
-                let move = (mult - 1) * 35;
-                document.getElementById('plane').style.transform = `translate(${move}px, -${move}px)`;
-                if (Math.random() < 0.007 && mult > 1.2) stopGame();
+        function startRound() {
+            flying = true; m = 1.00;
+            const mDisplay = document.getElementById('m-val');
+            mDisplay.classList.remove('crash-msg');
+            
+            gameLoop = setInterval(() => {
+                m += 0.01;
+                mDisplay.innerText = m.toFixed(2) + "x";
+                
+                // جوڵەی فڕۆکە بەرەو سەرەوە
+                let x = (m - 1) * 40;
+                let y = (m - 1) * 30;
+                document.getElementById('plane').style.transform = `translate(${x}px, -${y}px)`;
+
+                // ئەگەری دۆڕان (تەقینەوە)
+                if (Math.random() < 0.006 && m > 1.3) crash();
             }, 100);
         }
 
-        function stopGame() {
-            clearInterval(timer);
-            isActive = false;
-            document.getElementById('m-display').innerText = "فڕی!";
-            document.getElementById('m-display').classList.add('flew-text');
+        function crash() {
+            clearInterval(gameLoop);
+            flying = false;
+            const mDisplay = document.getElementById('m-val');
+            mDisplay.innerText = "فڕی (Flew Away)";
+            mDisplay.classList.add('crash-msg');
+            
             setTimeout(() => {
-                document.querySelectorAll('.bet-btn').forEach(reset);
-                document.getElementById('m-display').innerText = "1.00x";
+                document.querySelectorAll('.bet-btn').forEach(resetBtn);
+                mDisplay.innerText = "1.00x";
                 document.getElementById('plane').style.transform = "translate(0,0)";
-            }, 2000);
+            }, 2500);
         }
 
-        function reset(btn) {
-            btn.innerText = "بەستن (100$)";
-            btn.classList.remove('cashout');
+        function resetBtn(btn) {
+            btn.innerText = "PLACE BET";
+            btn.classList.remove('active');
         }
     </script>
 </body>
