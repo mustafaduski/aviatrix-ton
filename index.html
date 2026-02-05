@@ -2,27 +2,111 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviatrix Pro - TON Connect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Aviatrix Pro Mobile</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        body { margin: 0; background: #0c0d12; color: white; font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
-        .game-header { padding: 10px; display: flex; justify-content: space-between; align-items: center; background: #151724; }
-        #ton-connect-button { scale: 0.8; } /* قەبارێ دوگمەیا وەلێتی */
-        .game-area { flex-grow: 1; background: linear-gradient(to bottom, #1a1c2c, #4a1942); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .multiplier { font-size: 4.5rem; font-weight: 900; z-index: 10; text-shadow: 0 0 20px #a020f0; }
-        .plane-container { position: absolute; bottom: 20%; left: 15%; transition: all 0.1s linear; }
-        .plane-svg { width: 90px; filter: drop-shadow(0 0 15px #a020f0); }
-        .controls { background: #151724; padding: 20px; border-radius: 20px 20px 0 0; }
-        .bet-button { width: 100%; background: #02c076; color: white; border: none; padding: 18px; border-radius: 12px; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
-        .bet-button:disabled { background: #32354a; cursor: not-allowed; }
-        .status-text { text-align: center; font-size: 0.8rem; margin-top: 10px; color: #848e9c; }
+        /* دیزاینێ گشتی یێ موبایلێ */
+        body { 
+            margin: 0; 
+            padding: 0;
+            background: #0c0d12; 
+            color: white; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* سەرێ شاشێ (Header) */
+        .game-header { 
+            padding: 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: #151724;
+            z-index: 100;
+        }
+
+        #ton-connect-button { scale: 0.9; }
+
+        /* جهێ فڕینێ (Game Area) */
+        .game-area { 
+            flex: 1; 
+            background: linear-gradient(to bottom, #1a1c2c, #4a1942); 
+            position: relative; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .multiplier { 
+            font-size: clamp(3.5rem, 15vw, 5.5rem); 
+            font-weight: 900; 
+            z-index: 10; 
+            text-shadow: 0 0 25px #a020f0; 
+        }
+
+        .plane-container { 
+            position: absolute; 
+            bottom: 25%; 
+            left: 15%; 
+            transition: all 0.1s linear; 
+            z-index: 5;
+        }
+
+        .plane-svg { 
+            width: 100px; 
+            filter: drop-shadow(0 0 15px #a020f0); 
+        }
+
+        /* پشکا کۆنترۆڵێ (Footer/Controls) */
+        .controls { 
+            background: #151724; 
+            padding: 25px 20px; 
+            border-radius: 30px 30px 0 0;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            padding-bottom: env(safe-area-inset-bottom); /* Bo iPhone x u nuu */
+        }
+
+        .bet-button { 
+            width: 100%; 
+            background: linear-gradient(180deg, #02e08a 0%, #029a5f 100%);
+            color: white; 
+            border: none; 
+            padding: 20px; 
+            border-radius: 16px; 
+            font-size: 1.8rem; 
+            font-weight: 900; 
+            box-shadow: 0 5px 0 #016b42;
+            transition: 0.1s;
+        }
+
+        .bet-button:active { 
+            transform: translateY(4px); 
+            box-shadow: none; 
+        }
+
+        .wallet-addr { 
+            margin-top: 15px;
+            font-size: 0.7rem; 
+            color: #6e7191; 
+            text-align: center;
+            word-break: break-all;
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="game-header">
-        <div id="ton-connect-button"></div> <div style="color: #00d2ff;">Aviatrix Pro</div>
+        <div id="ton-connect-button"></div>
+        <div style="font-weight: bold; color: #00d2ff;">Aviatrix Pro</div>
     </div>
 
     <div class="game-area">
@@ -33,55 +117,52 @@
     </div>
 
     <div class="controls">
-        <button class="bet-button" id="bet-btn" onclick="handleBet()">BET</button>
-        <div class="status-text" id="status">Please connect your wallet to play</div>
+        <button class="bet-button" onclick="handleBet()">BET</button>
+        <div class="wallet-addr">
+            Deposit: UQAinxO5Eym0OB4mHquKX1UIpLeK9gdb6OuKrdZE6v63NgPH
+        </div>
     </div>
 
     <script>
-        // ١. دەستپێکرنا TON Connect
+        // Start TonConnect
         const tonConnectUI = new TONConnectUI.TonConnectUI({
             manifestUrl: 'https://mustafaduski.github.io/aviatrix-ton/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-button'
         });
 
-        // ٢. یاری (Multiplier)
+        // Game Logic
         let m = 1.00;
-        setInterval(() => {
+        function update() {
             m += 0.01;
             document.getElementById('m-val').innerText = m.toFixed(2) + "x";
             let plane = document.getElementById('plane-box');
-            plane.style.left = (15 + Math.min((m-1)*30, 60)) + "%";
-            plane.style.bottom = (20 + Math.min((m-1)*15, 40)) + "%";
-        }, 100);
+            plane.style.left = (15 + Math.min((m-1)*40, 65)) + "%";
+            plane.style.bottom = (25 + Math.min((m-1)*20, 50)) + "%";
+            plane.style.transform = `translateY(${Math.sin(Date.now()/150)*4}px)`;
+            requestAnimationFrame(update);
+        }
+        update();
 
-        // ٣. کارکرنا دوگمەیا BET
+        // Mobile Bet Action
         async function handleBet() {
-            const connectedWallet = tonConnectUI.wallet;
-            
-            if (!connectedWallet) {
+            if (!tonConnectUI.wallet) {
                 window.Telegram.WebApp.showAlert("تکایە بەری هەمی تشتان وەلێتێ خۆ (Connect) بکە!");
                 return;
             }
-
-            // ئەگەر وەلێت یێ بەستى بیت، داخوازییا پارەی دکەت
             const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 60,
-                messages: [
-                    {
-                        address: "UQAinxO5Eym0OB4mHquKX1UIpLeK9gdb6OuKrdZE6v63NgPH", // وەلێتێ تە
-                        amount: "1000000000" // ئەڤە رامانا ١ تەن ددەت (ب نانۆ تەن)
-                    }
-                ]
+                messages: [{
+                    address: "UQAinxO5Eym0OB4mHquKX1UIpLeK9gdb6OuKrdZE6v63NgPH",
+                    amount: "1000000000" // 1 TON
+                }]
             };
-
             try {
                 await tonConnectUI.sendTransaction(transaction);
-                window.Telegram.WebApp.showAlert("Bet Placed Successfully!");
-            } catch (e) {
-                console.error(e);
-            }
+                window.Telegram.WebApp.showAlert("Bet Placed!");
+            } catch (e) { console.error(e); }
         }
 
+        // Fullscreen for Mobile
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
     </script>
