@@ -158,5 +158,19 @@
         
         list.prepend(item);
         if(list.children.length > 8) list.lastChild.remove();
-    }
+    } // لایەنی یاریزان (Frontend)
+const socket = io(); // پەیوەندی بە سێرڤەرەوە دەکات
+
+socket.on('tick', (data) => {
+    if (gameState !== "FLYING") startFlyingAnimation(); // ئەگەر وەستابوو، دەستپێبکات
+    multiplier = parseFloat(data.multiplier);
+    document.getElementById('m-display').innerText = data.multiplier + "x";
+});
+
+socket.on('crash', (data) => {
+    isFlying = false;
+    document.getElementById('m-display').innerText = "FLEW AWAY!";
+    updateHistoryUI(data.history); // مێژووی فڕینەکان نوێ دەکاتەوە
+});
+
 </script>// 
