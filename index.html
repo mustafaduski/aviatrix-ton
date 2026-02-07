@@ -3,169 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aviatrix Enterprise Pro</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://pixijs.download/v7.x/pixi.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-    
+    <title>Aviatrix Ultra Galaxy</title>
     <style>
-        body { margin: 0; background: #0c0d12; overflow: hidden; font-family: 'Arial', sans-serif; color: white; }
-        #ui { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; }
-        
-        /* بەشی سەرەوە: باڵانس و مێژوو */
-        .top-bar { display: flex; justify-content: space-between; padding: 15px; pointer-events: auto; }
-        .history-bar { display: flex; gap: 5px; overflow-x: auto; }
-        .hist-item { background: #1c1f2e; color: #ffb500; padding: 5px 10px; border-radius: 5px; font-size: 12px; border: 1px solid #2d3045; }
-        .balance-box { background: #1c1f2e; padding: 10px; border-radius: 10px; border: 1px solid #2855f5; text-align: right; }
+        body {
+            margin: 0;
+            background: #050505 url('https://wallpaperaccess.com/full/1209562.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-        /* ناوەڕاست: لیدەربۆرد و مڵتیپلایەر */
-        .multiplier { text-align: center; margin-top: 10vh; font-size: 5rem; font-weight: 900; color: white; text-shadow: 0 0 20px rgba(255,181,0,0.5); }
-        .leaderboard { position: absolute; right: 10px; top: 100px; width: 120px; background: rgba(28,31,46,0.8); border-radius: 8px; padding: 8px; font-size: 11px; }
+        .header {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 2px 10px #ff0055;
+        }
 
-        /* بەشی خوارەوە: کۆنتڕۆڵەکان */
-        .controls-container { margin-top: auto; background: #0f111a; padding: 20px; pointer-events: auto; border-top: 2px solid #232635; }
-        .bet-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .bet-btn { background: linear-gradient(180deg, #2855f5, #1a3ab3); color: white; border: none; padding: 20px; border-radius: 15px; font-size: 1.5rem; font-weight: 900; cursor: pointer; width: 100%; transition: 0.2s; }
-        .bet-btn.active { background: linear-gradient(180deg, #ffb500, #e68a00); color: black; }
-        .input-box { background: #1c1f2e; border: 1px solid #232635; color: white; padding: 8px; border-radius: 5px; width: 60px; text-align: center; }
+        #balance { color: #ffd700; font-weight: bold; font-size: 20px; }
+
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #multiplier {
+            position: absolute;
+            font-size: 60px;
+            font-weight: bold;
+            text-shadow: 0 0 15px #00d2ff;
+            z-index: 10;
+        }
+
+        canvas { background: transparent; }
+
+        .controls {
+            width: 100%;
+            padding: 20px;
+            background: rgba(0,0,0,0.8);
+            text-align: center;
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 5px;
+            width: 80px;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .btn-bet {
+            padding: 15px 60px;
+            background: linear-gradient(45deg, #ff0055, #ff00aa);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 0, 85, 0.4);
+        }
     </style>
 </head>
 <body>
 
-<div id="game-container"></div>
-
-<div id="ui">
-    <div class="top-bar">
-        <div class="history-bar" id="history-list"></div>
-        <div class="balance-box">
-            <span style="font-size: 10px; color: #aaa;">DEMO BALANCE</span>
-            <div id="balance-amount">1,000.00 TON</div>
-        </div>
-    </div>
-
-    <div class="multiplier" id="m-display">1.00x</div>
-
-    <div class="leaderboard">
-        <div style="color: #ffb500; margin-bottom: 5px; text-align: center;">TOP WINNERS</div>
-        <div id="leaderboard-list"></div>
-    </div>
-
-    <div class="controls-container">
-        <div class="bet-row">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <button onclick="changeBet(-5)" class="input-box" style="width: 35px; cursor: pointer;">-</button>
-                <div style="text-align: center;">
-                    <span id="current-bet-display" style="font-weight: bold; color: #ffb500;">10.00</span>
-                </div>
-                <button onclick="changeBet(5)" class="input-box" style="width: 35px; cursor: pointer;">+</button>
-            </div>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <span style="font-size: 10px; color: #aaa;">AUTO</span>
-                <input type="number" id="auto-value" value="2.00" step="0.1" class="input-box">
-                <input type="checkbox" id="auto-enabled">
-            </div>
-        </div>
-        <button class="bet-btn" id="main-btn" onclick="handleAction()">PLACE BET</button>
-        <button onclick="shareLink()" style="background: none; border: none; color: #2855f5; font-size: 12px; width: 100%; margin-top: 10px; cursor: pointer;">Invite Friends +500 TON</button>
-    </div>
+<div class="header">
+    <div>💰 Balance: $<span id="balanceVal">100.00</span></div>
+    <div style="color: #00ffcc;">Aviatrix PRO</div>
 </div>
 
+<div class="game-area">
+    <div id="multiplier">1.00x</div>
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<div class="controls">
+    <input type="number" id="betInput" value="10"> <br>
+    <button class="btn-bet" id="mainBtn">BET</button>
+</div>
+
+<audio id="crashSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
+
 <script>
-    // 1. تنظیماتی Telegram و دەنگ
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-    const playerName = tg.initDataUnsafe?.user?.first_name || "Guest";
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const multiText = document.getElementById('multiplier');
+    const balanceText = document.getElementById('balanceVal');
+    const mainBtn = document.getElementById('mainBtn');
+    const crashSound = document.getElementById('crashSound');
 
-    const cashOutSound = new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'] });
-    const crashSound = new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'] });
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight * 0.6;
 
-    // 2. گرافیکی PixiJS
-    const app = new PIXI.Application({ width: window.innerWidth, height: window.innerHeight * 0.6, backgroundColor: 0x0c0d12 });
-    document.getElementById('game-container').appendChild(app.view);
+    let balance = 100.0;
+    let multiplier = 1.0;
+    let isPlaying = false;
+    let planeX = 50, planeY = canvas.height - 50;
 
-    const plane = new PIXI.Graphics().beginFill(0xff3344).drawRoundedRect(0, 0, 50, 20, 5).endFill();
-    app.stage.addChild(plane);
-    const line = new PIXI.Graphics();
-    app.stage.addChild(line);
+    // بارکردنا وێنەیێ فڕۆکێ
+    const planeImg = new Image();
+    planeImg.src = 'https://i.ibb.co/3pS9m8M/plane-red.png';
 
-    // 3. لۆژیکی یاری
-    let balance = 1000.00, currentBet = 10.00, multiplier = 1.00, isFlying = false, hasCashedOut = false;
-
-    function changeBet(val) { if(!isFlying) { currentBet = Math.max(1, currentBet + val); document.getElementById('current-bet-display').innerText = currentBet.toFixed(2); } }
-
-    const socket = io(); // بەستنەوە بە سێرڤەرەکەی کۆیێب
-
-    socket.on('tick', (data) => {
-        multiplier = parseFloat(data.multiplier);
-        document.getElementById('m-display').innerText = data.multiplier + "x";
-        
-        if (!isFlying) { isFlying = true; hasCashedOut = false; }
-        
-        // Auto Cash Out
-        if (isFlying && !hasCashedOut && document.getElementById('auto-enabled').checked) {
-            if (multiplier >= parseFloat(document.getElementById('auto-value').value)) handleAction();
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (isPlaying) {
+            ctx.drawImage(planeImg, planeX, planeY, 60, 60);
+            planeX += 2;
+            planeY -= 1.5;
+            
+            if (planeX > canvas.width) planeX = 0;
+            if (planeY < 0) planeY = canvas.height;
         }
-        
-        updateGraphics(multiplier);
-    });
+        requestAnimationFrame(draw);
+    }
 
-    socket.on('crash', (data) => {
-        isFlying = false;
-        crashSound.play();
-        document.getElementById('m-display').innerText = "CRASHED!";
-        document.getElementById('m-display').style.color = "#ff3366";
-        updateHistoryUI(data.history);
-        setTimeout(() => { 
-            document.getElementById('m-display').style.color = "white";
-            resetUI();
-        }, 3000);
-    });
-
-    function handleAction() {
-        const btn = document.getElementById('main-btn');
-        if (!isFlying && !hasCashedOut) {
-            if (balance >= currentBet) {
-                balance -= currentBet;
-                updateBalanceUI();
-                btn.innerText = "CASH OUT";
-                btn.classList.add('active');
+    mainBtn.onclick = () => {
+        if (!isPlaying) {
+            let bet = parseFloat(document.getElementById('betInput').value);
+            if (bet <= balance) {
+                balance -= bet;
+                balanceText.innerText = balance.toFixed(2);
+                startGame();
             }
-        } else if (isFlying && !hasCashedOut) {
-            let win = currentBet * multiplier;
-            balance += win;
-            hasCashedOut = true;
-            cashOutSound.play();
-            updateBalanceUI();
-            btn.innerText = "WAITING...";
-            btn.classList.remove('active');
-            tg.HapticFeedback.notificationOccurred('success');
+        } else {
+            cashOut();
         }
-    }
+    };
 
-    function updateBalanceUI() { document.getElementById('balance-amount').innerText = balance.toFixed(2) + " TON"; }
-    
-    function updateHistoryUI(history) {
-        const list = document.getElementById('history-list');
-        list.innerHTML = history.map(h => `<div class="hist-item">${h}x</div>`).join('');
-    }
-
-    function resetUI() {
-        document.getElementById('main-btn').innerText = "PLACE BET";
-        document.getElementById('main-btn').classList.remove('active');
-    }
-
-    function updateGraphics(m) {
-        let x = (m - 1) * 100;
-        let y = Math.pow(m - 1, 1.2) * 80;
-        plane.x = 50 + x; plane.y = app.screen.height - 50 - y;
-        line.clear().lineStyle(4, 0xffb500).moveTo(50, app.screen.height - 50).quadraticCurveTo(plane.x/2 + 25, app.screen.height-50, plane.x, plane.y);
-    }
-
-    function shareLink() {
-        const url = `https://t.me/بۆتەکەت?start=${tg.initDataUnsafe?.user?.id}`;
-        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=وەرە یاری بکە!`);
-    }
-</script>
-</body>
-</html>
+    function startGame() {
